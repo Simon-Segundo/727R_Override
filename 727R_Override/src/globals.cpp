@@ -1,24 +1,20 @@
 #include "globals.hpp"
 #include "lemlib/chassis/chassis.hpp"
 #include "pros/abstract_motor.hpp"
-#include "pros/adi.hpp"
-#include "pros/vision.hpp"
 
 pros::Controller Controller(pros::E_CONTROLLER_MASTER);
 
 pros::MotorGroup left_motors({-11,-12,-13}, pros::MotorGearset::blue);
 pros::MotorGroup right_motors({1, 2,3}, pros::MotorGearset::blue);
 
-pros::Motor intakeMotor(5);
+pros::Motor intakeMotor(-5, pros::MotorGearset::blue);
 
-pros::MotorGroup cascade({-14, 4});
-pros::MotorGroup arm({20, -10});
-
-pros::adi::DigitalOut claw('A');
+pros::MotorGroup cascade({-14, 4}, pros::MotorGearset::blue);
+pros::MotorGroup grabber({20, -10});
 
 pros::Imu imu(7);
 
-pros::AIVision AIsensor(15);
+pros::AIVision AISensor(15);
 
 pros::Distance leftDistance(21);
 pros::Distance rightDistance(9);
@@ -78,8 +74,8 @@ lemlib::Chassis chassis(drivetrain, // drivetrain settings
                         sensors // odometry sensors
 );
 
-// Used for indicating whether the robot's clamp is active or not
-bool clamped;
+// Used for indicating whether the robot's rollers are grabbing an object or not
+bool grabbed;
 
 // Used for resetting the robot position using distance sensors
 double robotPosition;

@@ -30,13 +30,11 @@ extern pros::MotorGroup right_motors;
 extern pros::Motor intakeMotor;
 
 extern pros::MotorGroup cascade;
-extern pros::MotorGroup arm;
-
-extern pros::adi::DigitalOut claw;
+extern pros::MotorGroup grabber;
 
 extern pros::Imu imu;
 
-extern pros::AIVision AIsensor;
+extern pros::AIVision AISensor;
 
 extern pros::Optical opti;
 extern pros::Distance leftDistance;
@@ -57,5 +55,5 @@ extern lemlib::ControllerSettings angular_controller;
 extern lemlib::OdomSensors sensors;
 extern lemlib::Chassis chassis;
 
-extern bool clamped;
+extern bool grabbed;
 extern double robotPosition;

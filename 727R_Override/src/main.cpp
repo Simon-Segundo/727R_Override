@@ -1,5 +1,7 @@
 #include "autons.h"
 #include "globals.hpp"
+#include "pros/screen.h"
+#include "pros/screen.hpp"
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -10,77 +12,69 @@
 
 void lift() {
     if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
-        cascade.move_velocity(100);
+        cascade.move_velocity(400);
     } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
-        cascade.move_velocity(-100);
+        cascade.move_velocity(-4600);
     } else {
         cascade.brake();
     }
 }
 
-void swing() {
-    if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-        arm.move_velocity(200);
-    } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
-        arm.move_velocity(-200);
-    } else {
-        arm.brake();
-    }
-}
-
 void intake() {
     if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
-        intakeMotor.move_velocity(127);
+        intakeMotor.move_velocity(600);
     } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
-        intakeMotor.move_velocity(-127);
+        intakeMotor.move_velocity(-600);
     } else {
         intakeMotor.brake();
     }
 }
 
-void clamp() {
-    if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) && (clamped == false)) {
-        claw.set_value(true);
-        clamped = true;
+void grab() {
+    if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) && (grabbed == false)) {
+        grabber.move_velocity(600);
+        grabbed = true;
         pros::delay(250);
-    } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) && (clamped == true)) {
-        claw.set_value(false);
-        clamped = false;
+    } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) && (grabbed == true)) {
+        grabber.move_velocity(600);
+        grabbed = false;
         pros::delay(250);
+    } else {
+        grabber.brake();
     }
 }
 
 void initialize() {
 	pros::lcd::initialize(); // initialize brain screen
 	imu.reset();
-    AIsensor.reset();
+    initAISensor();
     chassis.calibrate(); // calibrate sensors
     pros::c::motor_set_voltage_limit(12, 8000);
     pros::c::motor_set_voltage_limit(2, 8000);
     pros::c::motor_set_voltage_limit(5, 8000);
-    pros::c::motor_set_voltage_limit(14, 8000);
-    pros::c::motor_set_voltage_limit(4, 8000);
     pros::c::motor_set_voltage_limit(10, 8000);
     pros::c::motor_set_voltage_limit(20, 8000);
 	left_motors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 	right_motors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     cascade.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    // swing.set_brake_mode(hold)
+    grabber.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-    pros::Task screen_task([&]() {
-        while (true) {
-            // print robot location to the brain screen
-            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
-            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
-            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+    // Constantly prints the x, y, and theta values of the robot according to its initial position
+    // pros::Task screen_task([&]() {
+    //     while (true) {
+    //         // print robot location to the brain screen
+    //         pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
+    //         pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
+    //         pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
 
-			pros::lcd::print(3, "Vertical Encoder: %i", vert_rotation.get_position());
-       		// print measurements from the rotation sensor
+	// 		pros::lcd::print(3, "Vertical Encoder: %i", vert_rotation.get_position());
+    //    		// print measurements from the rotation sensor
 
-            // delay to save resources
-            pros::delay(20);
-        }
-    });
+    //         // delay to save resources
+    //         pros::delay(20);
+    //     }
+    // });
 }
 /**
  * Runs while the robot is in the disabled state of Field Management System or
@@ -113,7 +107,16 @@ void competition_initialize() {}
  */
  
 void autonomous() {
-    matchAutoLeft();
+    while(true) {
+        auto goals = scanGoals();
+        auto gameObjects = scanGameObjects();
+
+        pros::screen::print(pros::E_TEXT_MEDIUM, 1, "Goals found: %d", goals.size());
+        pros::screen::print(pros::E_TEXT_MEDIUM, 2, "Objects found: %d", gameObjects.size());
+
+        pros::delay(50);
+    }
+    // matchAutoLeft();
 }
 
 /**
@@ -130,15 +133,6 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-    left_motors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
-	right_motors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
-
-    pros::Task ([&] () {
-        while (true) {
-            clamp();
-            pros::delay(10);
-        }
-    });
 
 	while (true) {
         // if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1)){
@@ -149,9 +143,9 @@ void opcontrol() {
 		int turn = Controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		chassis.arcade(throttle, turn);                    // Sets drivetrain velocity
 
+        grab();
         lift();
         intake();
-        swing();
 
 		pros::delay(20);                               // Run for 20 ms then update
 	}
