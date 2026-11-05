@@ -61,5 +61,5 @@ extern lemlib::Chassis chassis;
 
 extern double swingTrueAngle;
 extern double cascadeTrueAngle;
-// extern int stackHeight;
+extern volatile bool grabOverride;
 extern double robotPosition;

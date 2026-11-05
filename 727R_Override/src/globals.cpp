@@ -87,8 +87,8 @@ double swingTrueAngle;
 // Used to calculate the height of the cascade lift
 double cascadeTrueAngle;
 
-// Used for the height of the cascade
-// int stackHeight;
+// Used for toggling off the brake command of the grabber while R1 button press code is being run
+volatile bool grabOverride = false;
 
 // Used for resetting the robot position using distance sensors
 double robotPosition;

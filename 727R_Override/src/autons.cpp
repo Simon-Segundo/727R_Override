@@ -4,7 +4,7 @@
 #include "pros/distance.hpp"
 
 void autoScore () {
-    intakeMotor.move_velocity(600);
+    grabber.move_velocity(600);
     cascade.move_velocity(600);
     while(scoreDistance.get_distance() < 200) {
         pros::delay(10);
@@ -15,12 +15,16 @@ void autoScore () {
         swing.move_velocity(600);
     }
     swing.brake();
+    left_motors.move_velocity(600);
+    right_motors.move_velocity(600);
     pros::delay(50);
-    intakeMotor.move_velocity(-600);
+    grabber.move_velocity(-600);
+    left_motors.brake();
+    right_motors.brake();
     pros::delay(400);
-    intakeMotor.brake();
+    grabber.brake();
     cascade.move_velocity(600);
-    pros::delay(400);
+    pros::delay(500);
     cascade.brake();
 }
 
@@ -33,7 +37,7 @@ void swingUp() {
 }
 
 void swingDown() {
-    while(swingTrueAngle > 0) {
+    while(!swingResetter.get_value()) {
         swing.move_velocity(-600);
         pros::delay(10);
     }

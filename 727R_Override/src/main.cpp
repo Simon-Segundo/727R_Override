@@ -1,5 +1,6 @@
 #include "autons.h"
 #include "globals.hpp"
+#include "pros/misc.h"
 #include "pros/motors.h"
 #include "pros/motors.hpp"
 #include "pros/rtos.hpp"
@@ -13,6 +14,8 @@
  * to keep execution time for this mode under a few seconds.
  */
 
+ // Automatically scores a cup and pin when activated
+
 void lift() {
     // if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
     //     cascade.move_velocity(600);
@@ -23,51 +26,69 @@ void lift() {
     // }
 
     if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-        autoScore();
-    } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
-        while (cascadeTrueAngle > 0) {
-            cascade.move_velocity(-600);
+        grabOverride = true;
+        grabber.move_velocity(600);
+        cascade.move_velocity(600);
+        while(scoreDistance.get_distance() < 200) {
             pros::delay(10);
         }
+        pros::delay(700);
+        cascade.brake();
+        while(swingTrueAngle < 70) {
+            swing.move_velocity(600);
+        }
+        swing.brake();
+        pros::delay(100);
+        grabber.move_velocity(-600);
+        pros::delay(400);
+        grabber.brake();
+        cascade.move_velocity(600);
+        pros::delay(500);
+        cascade.brake();
+    } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+        while(!swingResetter.get_value()) {
+            swing.move_velocity(-600);
+            pros::delay(10);
+        }
+        pros::delay(100);
+        swing.brake();
+        swingAngle.reset_position();
+        swingTrueAngle = swingAngle.get_position()/200.0;
+        cascade.move_velocity(-600);
+    } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
+        cascade.move_velocity(600);
     } else {
         cascade.brake();
+        grabOverride = false;
     }
 }
 
 void intake() {
     if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+        grabOverride = false;
         intakeMotor.move_velocity(600);
         grabber.move_velocity(600);
     } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
+        grabOverride = false;
         intakeMotor.move_velocity(-600);
         grabber.move_velocity(-600);
     } else {
         intakeMotor.brake();
-        grabber.brake();
+        if(!grabOverride) {
+            grabber.brake();
+        }
     }
 }
 
 void swingGrab() {
-    if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP) && (swingTrueAngle < 80))) {
-        while(swingTrueAngle < 70) {
-            swing.move_velocity(600);
-            pros::delay(10);
-        }
-        swing.brake();
-    } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) && (swingTrueAngle > 80)) {
-        while(swingTrueAngle < 110) {
+    if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) && (swingTrueAngle < 80)) {
+        while(swingTrueAngle < 90) {
             swing.move_velocity(600);
             pros::delay(10);
         }
         swing.brake();
     } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) && (swingTrueAngle > 80)) {
-        while(swingTrueAngle > 70) {
-            swing.move_velocity(-400);
-            pros::delay(10);
-        }
-        swing.brake();
-    } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) && (swingTrueAngle < 80)) {
-        while(swingTrueAngle > 0) {
+        while(!swingResetter.get_value()) {
             swing.move_velocity(-600);
             pros::delay(10);
         }
@@ -108,6 +129,9 @@ void initialize() {
             if (swingResetter.get_value()) {
                 swingAngle.set_position(0);
             }
+            // if (cascadeResetter.get_value()) {
+            //     cascadeAngle.set_position(0);
+            // }
             swingTrueAngle = swingAngle.get_position()/200.0;
             cascadeTrueAngle = cascadeAngle.get_position()/60.0;
             // pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
@@ -118,10 +142,11 @@ void initialize() {
             pros::lcd::print(4, "Swing Angle: %f", swingTrueAngle);
             // pros::lcd::print(5, "Ticks: %d", count++);
 
-            pros::delay(20);
+            pros::delay(50);
         }
     });
 }
+
 /**
  * Runs while the robot is in the disabled state of Field Management System or
  * the VEX Competition Switch, following either autonomous or opcontrol. When
@@ -191,6 +216,13 @@ void opcontrol() {
             pros::delay(10);
         }
     });
+    pros::Task liftTask ([] () {
+        while(true) {
+            lift();
+
+            pros::delay(10);
+        }
+    });
 
 	while (true) {
         // if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1)){
@@ -201,7 +233,6 @@ void opcontrol() {
 		int turn = Controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		chassis.arcade(throttle, turn);                    // Sets drivetrain velocity
 
-        lift();
         intake();
 
 		pros::delay(20);                               // Run for 20 ms then update
