@@ -8,10 +8,10 @@
 constexpr double MM_TO_INCH = 1.0 / 25.4;
 
 // Sensor port definitions (again, adjust these)
-#define FRONT_SENSOR_PORT 7
-#define BACK_SENSOR_PORT 16
-#define LEFT_SENSOR_PORT 4
-#define RIGHT_SENSOR_PORT 5
+#define FRONT_SENSOR_PORT 6
+#define BACK_SENSOR_PORT 13
+#define LEFT_SENSOR_PORT 5
+#define RIGHT_SENSOR_PORT 21
 
 double getAveragedSensorReading(pros::Distance& sensor) {
 // Averages the first 10 sensor readings

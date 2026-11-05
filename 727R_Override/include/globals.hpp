@@ -30,24 +30,28 @@ extern pros::MotorGroup right_motors;
 extern pros::Motor intakeMotor;
 
 extern pros::MotorGroup cascade;
-extern pros::MotorGroup grabber;
 
-extern pros::Imu imu;
+extern pros::Motor grabber;
+extern pros::Motor swing;
 
-extern pros::AIVision AISensor;
+// extern pros::Imu imu;
 
-extern pros::Optical opti;
+// extern pros::AIVision AISensor;
+
+extern pros::Distance scoreDistance;
+
 extern pros::Distance leftDistance;
 extern pros::Distance rightDistance;
 extern pros::Distance backDistance;
 extern pros::Distance frontDistance;
 
+extern pros::Rotation cascadeAngle;
+extern pros::Rotation swingAngle;
 
-extern pros::Rotation vert_rotation;
-extern pros::Rotation horiz_rotation;
-
+extern pros::adi::DigitalIn swingResetter;
 
 extern lemlib::TrackingWheel vertical_tracking_wheel;
+// extern lemlib::TrackingWheel horiz_tracking_wheel;
 
 extern lemlib::Drivetrain drivetrain;
 extern lemlib::ControllerSettings lateral_controller;
@@ -55,5 +59,7 @@ extern lemlib::ControllerSettings angular_controller;
 extern lemlib::OdomSensors sensors;
 extern lemlib::Chassis chassis;
 
-extern bool grabbed;
+extern double swingTrueAngle;
+extern double cascadeTrueAngle;
+// extern int stackHeight;
 extern double robotPosition;

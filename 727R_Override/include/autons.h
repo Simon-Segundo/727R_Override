@@ -4,15 +4,11 @@
 
 #pragma once
 
-void autoMatchLoad(void);
-void autoUpDown(void);
-void autoWingPos(void);
-void autoHoodMech(void);
-void autoLeverSwing(void);
+void autoScore(void);
+void swingUp(void);
+void swingDown(void);
 
 void matchAutoLeft(void);
 void matchAutoRight(void);
-void winPointAuto(void);
-void skillsAuto74(void);
-void skillsAuto79(void);
+void skillsAuto(void);
 void tuningAuto(void);

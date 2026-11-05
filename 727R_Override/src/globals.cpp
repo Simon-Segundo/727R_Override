@@ -1,40 +1,47 @@
 #include "globals.hpp"
 #include "lemlib/chassis/chassis.hpp"
 #include "pros/abstract_motor.hpp"
+#include "pros/adi.hpp"
 
 pros::Controller Controller(pros::E_CONTROLLER_MASTER);
 
-pros::MotorGroup left_motors({-11,-12,-13}, pros::MotorGearset::blue);
-pros::MotorGroup right_motors({1, 2,3}, pros::MotorGearset::blue);
+pros::MotorGroup left_motors({-1,-2}, pros::MotorGearset::blue);
+pros::MotorGroup right_motors({9, 10}, pros::MotorGearset::blue);
 
-pros::Motor intakeMotor(-5, pros::MotorGearset::blue);
+pros::Motor intakeMotor(-3, pros::MotorGearset::blue);
 
-pros::MotorGroup cascade({-14, 4}, pros::MotorGearset::blue);
-pros::MotorGroup grabber({20, -10});
+pros::MotorGroup cascade({14, -4}, pros::MotorGearset::blue);
 
-pros::Imu imu(7);
+pros::Motor grabber(11);
+pros::Motor swing(12);
 
-pros::AIVision AISensor(15);
+// pros::Imu imu(16);
 
-pros::Distance leftDistance(21);
-pros::Distance rightDistance(9);
-pros::Distance backDistance(6);
-pros::Distance frontDistance(7);
+// pros::AIVision AISensor(17);
 
+pros::Distance scoreDistance(13);
 
-pros::Rotation vert_rotation(16);
-pros::Rotation horiz_rotation(8);
+pros::Distance leftDistance(5);
+pros::Distance rightDistance(21);
+// pros::Distance backDistance(13);
+pros::Distance frontDistance(6);
 
+pros::Rotation cascadeAngle(7);
+pros::Rotation swingAngle(15);
 
-//NEED NEW DISTANCES AND FLIP THE SENSORS IF NEEDED
-lemlib::TrackingWheel vertical_tracking_wheel(&vert_rotation, lemlib::Omniwheel::NEW_2, -0.25);
-lemlib::TrackingWheel horiz_tracking_wheel(&horiz_rotation, lemlib::Omniwheel::NEW_2, 1.5);
+pros::adi::DigitalIn swingResetter('E');
+
+pros::Rotation vert_rotation(8);
+// pros::Rotation horiz_rotation(8);
+
+lemlib::TrackingWheel vertical_tracking_wheel(&vert_rotation, lemlib::Omniwheel::NEW_2, -4.125);
+// lemlib::TrackingWheel horiz_tracking_wheel(&horiz_rotation, lemlib::Omniwheel::NEW_2, 0.75);
 
 
 lemlib::Drivetrain drivetrain(&left_motors, // left motor group
                               &right_motors, // right motor group
-                              11.25, // 10 inch track width
-                              3.3, // using new 4" omnis
+                              12.25, // 10 inch track width
+                              2.75, // using new 4" omnis
                               450, // drivetrain rpm is 360
                               2 // horizontal drift is 2 (for now)
 );
@@ -63,9 +70,9 @@ lemlib::ControllerSettings angular_controller(2.1, // proportional gain (kP) MAK
 
 lemlib::OdomSensors sensors(&vertical_tracking_wheel, // vertical tracking wheel 1, set to null
                             nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
-                            &horiz_tracking_wheel, // horizontal tracking wheel 1
+                            nullptr, // horizontal tracking wheel 1
                             nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
-                            &imu // inertial sensor
+                            nullptr // inertial sensor
 );
 
 lemlib::Chassis chassis(drivetrain, // drivetrain settings
@@ -74,8 +81,14 @@ lemlib::Chassis chassis(drivetrain, // drivetrain settings
                         sensors // odometry sensors
 );
 
-// Used for indicating whether the robot's rollers are grabbing an object or not
-bool grabbed;
+// Used to calculate the angle of the grabber
+double swingTrueAngle;
+
+// Used to calculate the height of the cascade lift
+double cascadeTrueAngle;
+
+// Used for the height of the cascade
+// int stackHeight;
 
 // Used for resetting the robot position using distance sensors
 double robotPosition;

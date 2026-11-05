@@ -1,7 +1,10 @@
 #include "autons.h"
 #include "globals.hpp"
-#include "pros/screen.h"
-#include "pros/screen.hpp"
+#include "pros/motors.h"
+#include "pros/motors.hpp"
+#include "pros/rtos.hpp"
+#include "pros/screen.h" // IWYU pragma: keep
+#include "pros/screen.hpp" // IWYU pragma: keep
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -11,70 +14,113 @@
  */
 
 void lift() {
-    if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
-        cascade.move_velocity(400);
-    } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
-        cascade.move_velocity(-4600);
+    // if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+    //     cascade.move_velocity(600);
+    // } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+    //     cascade.move_velocity(-600);
+    // } else {
+    //     cascade.brake();
+    // }
+
+    if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+        autoScore();
+    } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+        while (cascadeTrueAngle > 0) {
+            cascade.move_velocity(-600);
+            pros::delay(10);
+        }
     } else {
         cascade.brake();
     }
 }
 
 void intake() {
-    if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
+    if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
         intakeMotor.move_velocity(600);
-    } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
+        grabber.move_velocity(600);
+    } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
         intakeMotor.move_velocity(-600);
+        grabber.move_velocity(-600);
     } else {
         intakeMotor.brake();
-    }
-}
-
-void grab() {
-    if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) && (grabbed == false)) {
-        grabber.move_velocity(600);
-        grabbed = true;
-        pros::delay(250);
-    } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) && (grabbed == true)) {
-        grabber.move_velocity(600);
-        grabbed = false;
-        pros::delay(250);
-    } else {
         grabber.brake();
     }
 }
 
+void swingGrab() {
+    if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP) && (swingTrueAngle < 80))) {
+        while(swingTrueAngle < 70) {
+            swing.move_velocity(600);
+            pros::delay(10);
+        }
+        swing.brake();
+    } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) && (swingTrueAngle > 80)) {
+        while(swingTrueAngle < 110) {
+            swing.move_velocity(600);
+            pros::delay(10);
+        }
+        swing.brake();
+    } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) && (swingTrueAngle > 80)) {
+        while(swingTrueAngle > 70) {
+            swing.move_velocity(-400);
+            pros::delay(10);
+        }
+        swing.brake();
+    } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) && (swingTrueAngle < 80)) {
+        while(swingTrueAngle > 0) {
+            swing.move_velocity(-600);
+            pros::delay(10);
+        }
+        swing.brake();
+    }
+    // if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
+    //     swing.move_velocity(600);
+    // } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
+    //     swing.move_velocity(-600);
+    // } else {
+    //     swing.brake();
+    // }
+}
+
 void initialize() {
 	pros::lcd::initialize(); // initialize brain screen
-	imu.reset();
+    swingAngle.reset();
+    swingAngle.set_position(0);
+    cascadeAngle.reset();
+    cascadeAngle.set_position(0);
+    swingTrueAngle = 0;
+    cascadeTrueAngle = 0;
     initAISensor();
     chassis.calibrate(); // calibrate sensors
-    pros::c::motor_set_voltage_limit(12, 8000);
-    pros::c::motor_set_voltage_limit(2, 8000);
-    pros::c::motor_set_voltage_limit(5, 8000);
-    pros::c::motor_set_voltage_limit(10, 8000);
-    pros::c::motor_set_voltage_limit(20, 8000);
-	left_motors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
-	right_motors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    // pros::c::motor_set_voltage_limit(11, 8000);
+    // pros::c::motor_set_voltage_limit(12, 8000);
     cascade.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    // swing.set_brake_mode(hold)
+    swing.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     grabber.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-    // Constantly prints the x, y, and theta values of the robot according to its initial position
-    // pros::Task screen_task([&]() {
-    //     while (true) {
-    //         // print robot location to the brain screen
-    //         pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
-    //         pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
-    //         pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+    left_motors.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    right_motors.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 
-	// 		pros::lcd::print(3, "Vertical Encoder: %i", vert_rotation.get_position());
-    //    		// print measurements from the rotation sensor
+    // Constantly prints the x, y, theta, vertical encoder, and rotation sensor values of the robot
+    pros::Task screen([]() {
+        int count = 0;
+        while (true) {
+            if (swingResetter.get_value()) {
+                swingAngle.set_position(0);
+            }
+            swingTrueAngle = swingAngle.get_position()/200.0;
+            cascadeTrueAngle = cascadeAngle.get_position()/60.0;
+            // pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
+            // pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
+            // pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+            
+            pros::lcd::print(3, "Cascade Angle: %f", cascadeTrueAngle);
+            pros::lcd::print(4, "Swing Angle: %f", swingTrueAngle);
+            // pros::lcd::print(5, "Ticks: %d", count++);
 
-    //         // delay to save resources
-    //         pros::delay(20);
-    //     }
-    // });
+            pros::delay(20);
+        }
+    });
 }
 /**
  * Runs while the robot is in the disabled state of Field Management System or
@@ -107,16 +153,21 @@ void competition_initialize() {}
  */
  
 void autonomous() {
-    while(true) {
-        auto goals = scanGoals();
-        auto gameObjects = scanGameObjects();
+	left_motors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	right_motors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
-        pros::screen::print(pros::E_TEXT_MEDIUM, 1, "Goals found: %d", goals.size());
-        pros::screen::print(pros::E_TEXT_MEDIUM, 2, "Objects found: %d", gameObjects.size());
+    // while(true) {
+    //     auto goals = scanGoals();
+    //     auto gameObjects = scanGameObjects();
 
-        pros::delay(50);
-    }
+    //     pros::screen::print(pros::E_TEXT_MEDIUM, 1, "Goals found: %d", goals.size());
+    //     pros::screen::print(pros::E_TEXT_MEDIUM, 2, "Objects found: %d", gameObjects.size());
+
+    //     pros::delay(50);
+    // }
+
     // matchAutoLeft();
+    skillsAuto();
 }
 
 /**
@@ -133,6 +184,13 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
+    pros::Task swingTask ([&] (){
+        while(true) {
+            swingGrab();
+        
+            pros::delay(10);
+        }
+    });
 
 	while (true) {
         // if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1)){
@@ -143,7 +201,6 @@ void opcontrol() {
 		int turn = Controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		chassis.arcade(throttle, turn);                    // Sets drivetrain velocity
 
-        grab();
         lift();
         intake();
 
