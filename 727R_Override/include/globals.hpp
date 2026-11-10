@@ -34,7 +34,7 @@ extern pros::MotorGroup cascade;
 extern pros::Motor grabber;
 extern pros::Motor swing;
 
-// extern pros::Imu imu;
+extern pros::Imu imu;
 
 // extern pros::AIVision AISensor;
 
@@ -48,7 +48,8 @@ extern pros::Distance frontDistance;
 extern pros::Rotation cascadeAngle;
 extern pros::Rotation swingAngle;
 
-extern pros::adi::DigitalIn swingResetter;
+extern pros::adi::DigitalIn swingReset;
+extern pros::adi::DigitalIn cascadeReset;
 
 extern lemlib::TrackingWheel vertical_tracking_wheel;
 // extern lemlib::TrackingWheel horiz_tracking_wheel;

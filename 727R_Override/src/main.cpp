@@ -39,6 +39,9 @@ void lift() {
         }
         swing.brake();
         pros::delay(100);
+        cascade.move_velocity(-600);
+        pros::delay(200);
+        cascade.brake();
         grabber.move_velocity(-600);
         pros::delay(400);
         grabber.brake();
@@ -46,7 +49,7 @@ void lift() {
         pros::delay(500);
         cascade.brake();
     } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
-        while(!swingResetter.get_value()) {
+        while(!swingReset.get_value()) {
             swing.move_velocity(-600);
             pros::delay(10);
         }
@@ -82,25 +85,24 @@ void intake() {
 
 void swingGrab() {
     if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) && (swingTrueAngle < 80)) {
-        while(swingTrueAngle < 90) {
+        while(swingTrueAngle < 70) {
+            swing.move_velocity(600);
+            pros::delay(10);
+        }
+        swing.brake();
+    } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) && (swingTrueAngle < 150)) {
+        while(swingTrueAngle < 110) {
             swing.move_velocity(600);
             pros::delay(10);
         }
         swing.brake();
     } else if ((Controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) && (swingTrueAngle > 80)) {
-        while(!swingResetter.get_value()) {
+        while(!swingReset.get_value()) {
             swing.move_velocity(-600);
             pros::delay(10);
         }
         swing.brake();
     }
-    // if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
-    //     swing.move_velocity(600);
-    // } else if (Controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
-    //     swing.move_velocity(-600);
-    // } else {
-    //     swing.brake();
-    // }
 }
 
 void initialize() {
@@ -126,7 +128,7 @@ void initialize() {
     pros::Task screen([]() {
         int count = 0;
         while (true) {
-            if (swingResetter.get_value()) {
+            if (swingReset.get_value()) {
                 swingAngle.set_position(0);
             }
             // if (cascadeResetter.get_value()) {

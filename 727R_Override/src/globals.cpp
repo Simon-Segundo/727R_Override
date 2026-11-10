@@ -15,7 +15,7 @@ pros::MotorGroup cascade({14, -4}, pros::MotorGearset::blue);
 pros::Motor grabber(11);
 pros::Motor swing(12);
 
-// pros::Imu imu(16);
+pros::Imu imu(16);
 
 // pros::AIVision AISensor(17);
 
@@ -29,7 +29,8 @@ pros::Distance frontDistance(6);
 pros::Rotation cascadeAngle(7);
 pros::Rotation swingAngle(15);
 
-pros::adi::DigitalIn swingResetter('E');
+pros::adi::DigitalIn swingReset('E');
+pros::adi::DigitalIn cascadeReset('D');
 
 pros::Rotation vert_rotation(8);
 // pros::Rotation horiz_rotation(8);
@@ -72,7 +73,7 @@ lemlib::OdomSensors sensors(&vertical_tracking_wheel, // vertical tracking wheel
                             nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
                             nullptr, // horizontal tracking wheel 1
                             nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
-                            nullptr // inertial sensor
+                            &imu // inertial sensor
 );
 
 lemlib::Chassis chassis(drivetrain, // drivetrain settings
